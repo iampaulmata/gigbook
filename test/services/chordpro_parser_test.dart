@@ -99,6 +99,78 @@ void main() {
       });
     });
 
+    // ─── Outro section tag support (spec 002, FR-001–FR-004) ────────────────
+    group('Outro section', () {
+      test('{soo}/{eoo} produces a SectionBlock labeled "Outro"', () {
+        final parsed = ChordProParser.parse(
+            '{soo}\n[G]This is the [D]outro section\n{eoo}');
+        final labels =
+            parsed.blocks.whereType<SectionBlock>().map((b) => b.label);
+        expect(labels, contains('Outro'));
+      });
+
+      test('{start_of_outro}/{end_of_outro} produces an identical result to '
+          '{soo}/{eoo}', () {
+        final short = ChordProParser.parse(
+            '{soo}\n[G]This is the [D]outro section\n{eoo}');
+        final long = ChordProParser.parse(
+            '{start_of_outro}\n[G]This is the [D]outro section\n{end_of_outro}');
+        final shortLabels =
+            short.blocks.whereType<SectionBlock>().map((b) => b.label).toList();
+        final longLabels =
+            long.blocks.whereType<SectionBlock>().map((b) => b.label).toList();
+        expect(longLabels, shortLabels);
+      });
+
+      test('mixed-case outro directives are recognized identically to '
+          'lowercase', () {
+        final parsed = ChordProParser.parse(
+            '{SOO}\n[G]This is the [D]outro section\n{EOO}');
+        final labels =
+            parsed.blocks.whereType<SectionBlock>().map((b) => b.label);
+        expect(labels, contains('Outro'));
+
+        final parsedLong = ChordProParser.parse(
+            '{Start_Of_Outro}\nlyric line\n{End_Of_Outro}');
+        final longLabels =
+            parsedLong.blocks.whereType<SectionBlock>().map((b) => b.label);
+        expect(longLabels, contains('Outro'));
+      });
+
+      test('an unclosed {soo} runs through end of file', () {
+        final parsed =
+            ChordProParser.parse('{title: X}\n{soo}\nno end tag here');
+        expect(parsed.blocks.whereType<SectionBlock>(), hasLength(1));
+        expect(parsed.blocks.whereType<LyricBlock>(), hasLength(1));
+      });
+
+      test('two outro blocks using mixed short/long forms both render as '
+          'separate, correctly-ordered Outro sections', () {
+        final parsed = ChordProParser.parse(
+            '{soo}\nfirst outro\n{eoo}\n'
+            '{start_of_outro}\nsecond outro\n{end_of_outro}');
+        final sectionBlocks = parsed.blocks.whereType<SectionBlock>().toList();
+        expect(sectionBlocks, hasLength(2));
+        expect(sectionBlocks[0].label, 'Outro');
+        expect(sectionBlocks[1].label, 'Outro');
+      });
+
+      test('an outro section combined with other directives imports without '
+          'error or dropped content', () {
+        final parsed = ChordProParser.parse(
+            '{title: X}\n{sov}\nverse line\n{eov}\n{soo}\noutro line\n{eoo}');
+        final labels =
+            parsed.blocks.whereType<SectionBlock>().map((b) => b.label);
+        expect(labels, containsAll(['Verse', 'Outro']));
+        final allText = parsed.blocks
+            .whereType<LyricBlock>()
+            .map((b) => b.pairs.map((p) => p.lyricText).join())
+            .join('\n');
+        expect(allText, contains('verse line'));
+        expect(allText, contains('outro line'));
+      });
+    });
+
     // ─── US2: styled annotation lines (FR-012–FR-015) ────────────────────────
     group('US2 annotation styles', () {
       AnnotationStyle styleOf(String content) =>

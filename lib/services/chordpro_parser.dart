@@ -227,6 +227,9 @@ class ChordProParser {
           case 'sob':
           case 'start_of_bridge':
             blocks.add(SectionBlock(value.isNotEmpty ? value : 'Bridge'));
+          case 'soo':
+          case 'start_of_outro':
+            blocks.add(SectionBlock(value.isNotEmpty ? value : 'Outro'));
           case 'verse':
             blocks.add(SectionBlock(value.isNotEmpty ? value : 'Verse'));
           case 'chorus':
@@ -242,6 +245,8 @@ class ChordProParser {
           case 'end_of_chorus':
           case 'eob':
           case 'end_of_bridge':
+          case 'eoo':
+          case 'end_of_outro':
             inTabSection = false;
           case 'eot':
           case 'end_of_tab':

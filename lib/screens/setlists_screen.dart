@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/setlist.dart';
+import '../providers/library_provider.dart';
 import '../providers/setlist_provider.dart';
+import '../services/setlist_share_service.dart';
 import 'setlist_detail_screen.dart';
 
 class SetlistsScreen extends StatelessWidget {
@@ -74,10 +76,74 @@ class SetlistsScreen extends StatelessWidget {
               },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _createDialog(context),
+        onPressed: () => _showCreateMenu(context),
         tooltip: 'New setlist',
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  Future<void> _showCreateMenu(BuildContext context) async {
+    final choice = await showModalBottomSheet<_CreateChoice>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.add),
+              title: const Text('New setlist'),
+              onTap: () => Navigator.pop(ctx, _CreateChoice.newSetlist),
+            ),
+            ListTile(
+              leading: const Icon(Icons.file_open_outlined),
+              title: const Text('Import setlist'),
+              subtitle: const Text('From a shared .gigbook-setlist.json file'),
+              onTap: () => Navigator.pop(ctx, _CreateChoice.import),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (choice == null || !context.mounted) return;
+    if (choice == _CreateChoice.newSetlist) {
+      await _createDialog(context);
+    } else {
+      await _importSetlist(context);
+    }
+  }
+
+  Future<void> _importSetlist(BuildContext context) async {
+    final library = context.read<LibraryProvider>().songs;
+    SetlistImportResult? result;
+    try {
+      result = await SetlistShareService.pickAndParse(library);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+      }
+      return;
+    }
+    if (result == null || !context.mounted) return;
+
+    final setlistProvider = context.read<SetlistProvider>();
+    final setlist = await setlistProvider.createSetlist(result.name);
+    for (final song in result.matchedSongs) {
+      await setlistProvider.addSong(setlist.id!, song.id!);
+    }
+    if (!context.mounted) return;
+
+    final matchedCount = result.matchedSongs.length;
+    final missingCount = result.missingSongs.length;
+    final message = missingCount == 0
+        ? 'Imported "${result.name}" — $matchedCount songs.'
+        : 'Imported "${result.name}" — $matchedCount songs, '
+            '$missingCount not found in your library: '
+            '${result.missingSongs.join(", ")}';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), duration: const Duration(seconds: 6)),
     );
   }
 
@@ -146,3 +212,5 @@ class SetlistsScreen extends StatelessWidget {
 }
 
 enum _Action { rename, delete }
+
+enum _CreateChoice { newSetlist, import }

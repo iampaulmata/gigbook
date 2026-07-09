@@ -48,13 +48,31 @@ class SetlistProvider extends ChangeNotifier {
 
   Future<void> addSong(int setlistId, int songId) async {
     await AppDatabase.instance.addSongToSetlist(setlistId, songId);
+    await _stampLocalEditIfLinked(setlistId);
   }
 
   Future<void> removeSong(int setlistId, int songId) async {
     await AppDatabase.instance.removeSongFromSetlist(setlistId, songId);
+    await _stampLocalEditIfLinked(setlistId);
   }
 
   Future<void> reorder(int setlistId, List<int> orderedSongIds) async {
     await AppDatabase.instance.reorderSetlistEntries(setlistId, orderedSongIds);
+    await _stampLocalEditIfLinked(setlistId);
+  }
+
+  /// Marks a Drive-linked setlist as edited locally since its last sync
+  /// pull, so a later Drive sync can detect a conflict instead of silently
+  /// overwriting this edit with the remote version.
+  Future<void> _stampLocalEditIfLinked(int setlistId) async {
+    Setlist? setlist;
+    for (final s in _setlists) {
+      if (s.id == setlistId) {
+        setlist = s;
+        break;
+      }
+    }
+    if (setlist?.sourceUri == null) return;
+    await AppDatabase.instance.setSetlistLocalEditedAt(setlistId, DateTime.now());
   }
 }

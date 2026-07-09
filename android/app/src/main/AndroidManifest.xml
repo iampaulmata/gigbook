@@ -1,4 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Needed so folder import can read arbitrary .cho/.pro/.txt files chosen
+         via the folder picker; requested at runtime via permission_handler. -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+    <!-- Live session (local WiFi follow-along): sockets need INTERNET even
+         for LAN-only traffic, and NSD discovery needs Wi-Fi/network state. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:label="gigbook"
         android:name="${applicationName}"

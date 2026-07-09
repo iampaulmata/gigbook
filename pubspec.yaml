@@ -39,6 +39,11 @@ dependencies:
   provider: ^6.1.5
   shared_preferences: ^2.3.5
   reorderables: ^0.6.0
+  share_plus: ^12.0.2
+  permission_handler: ^12.0.3
+  saf_util: ^2.2.0
+  saf_stream: ^2.0.0
+  nearby_connections: ^4.3.0
 
 dev_dependencies:
   flutter_test:

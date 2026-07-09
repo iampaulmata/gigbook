@@ -6,6 +6,7 @@ import '../models/song.dart';
 import '../providers/library_provider.dart';
 import '../providers/setlist_provider.dart';
 import '../providers/settings_provider.dart';
+import '../services/setlist_share_service.dart';
 import 'song_view_screen.dart';
 
 class SetlistDetailScreen extends StatefulWidget {
@@ -66,12 +67,26 @@ class _SetlistDetailScreenState extends State<SetlistDetailScreen> {
           song: _songs[index],
           setlistSongs: List.from(_songs),
           setlistIndex: index,
+          setlistName: widget.setlist.name,
           initialShowChords: settings.showChords,
           initialFontSize: settings.fontSize,
           initialScrollSpeed: settings.scrollSpeed,
+          initialScrollPxPerBeat: settings.scrollPxPerBeat,
         ),
       ),
     );
+  }
+
+  Future<void> _shareSetlist() async {
+    try {
+      await SetlistShareService.share(widget.setlist, _songs);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not share setlist: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _showAddSongSheet() async {
@@ -108,6 +123,11 @@ class _SetlistDetailScreenState extends State<SetlistDetailScreen> {
       appBar: AppBar(
         title: Text(widget.setlist.name),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share_outlined),
+            tooltip: 'Share setlist',
+            onPressed: _songs.isEmpty ? null : _shareSetlist,
+          ),
           IconButton(
             icon: const Icon(Icons.playlist_add),
             tooltip: 'Add song',

@@ -16,6 +16,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
   late final TextEditingController _artist;
   late final TextEditingController _key;
   late final TextEditingController _capo;
+  late final TextEditingController _tempo;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -26,6 +27,8 @@ class _EditSongScreenState extends State<EditSongScreen> {
     _key = TextEditingController(text: widget.song.key ?? '');
     _capo = TextEditingController(
         text: widget.song.capo != null ? '${widget.song.capo}' : '');
+    _tempo = TextEditingController(
+        text: widget.song.tempo != null ? '${widget.song.tempo}' : '');
   }
 
   @override
@@ -34,6 +37,7 @@ class _EditSongScreenState extends State<EditSongScreen> {
     _artist.dispose();
     _key.dispose();
     _capo.dispose();
+    _tempo.dispose();
     super.dispose();
   }
 
@@ -44,6 +48,8 @@ class _EditSongScreenState extends State<EditSongScreen> {
       artist: _artist.text.trim(),
       key: _key.text.trim().isEmpty ? null : _key.text.trim(),
       capo: _capo.text.trim().isEmpty ? null : int.tryParse(_capo.text.trim()),
+      tempo:
+          _tempo.text.trim().isEmpty ? null : int.tryParse(_tempo.text.trim()),
     );
     Navigator.pop(context, updated);
   }
@@ -93,6 +99,24 @@ class _EditSongScreenState extends State<EditSongScreen> {
                 final n = int.tryParse(v);
                 if (n == null || n < 0 || n > 12) {
                   return 'Enter a number between 0 and 12';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _tempo,
+              decoration: const InputDecoration(
+                labelText: 'Tempo (BPM)',
+                hintText: 'e.g. 120 — used for tempo-synced auto-scroll',
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              validator: (v) {
+                if (v == null || v.isEmpty) return null;
+                final n = int.tryParse(v);
+                if (n == null || n < 20 || n > 300) {
+                  return 'Enter a number between 20 and 300';
                 }
                 return null;
               },

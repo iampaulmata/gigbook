@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/song.dart';
+import '../providers/drive_sync_provider.dart';
 import '../providers/library_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/song_list_tile.dart';
@@ -28,6 +29,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final library = context.watch<LibraryProvider>();
+    final driveSync = context.watch<DriveSyncProvider>();
     var songs = library.filtered;
     if (_favoritesOnly) songs = songs.where((s) => s.isFavorite).toList();
 
@@ -70,29 +72,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
           ),
         ],
       ),
-      body: library.loading
-          ? const Center(child: CircularProgressIndicator())
-          : songs.isEmpty
-              ? _EmptyState(
-                  favoritesOnly: _favoritesOnly,
-                  hasQuery: library.query.isNotEmpty,
-                )
-              : ListView.separated(
-                  itemCount: songs.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) {
-                    final song = songs[i];
-                    return SongListTile(
-                      song: song,
-                      onTap: () => _openSong(context, song),
-                      onToggleFavorite: () =>
-                          context.read<LibraryProvider>().toggleFavorite(song),
-                      onDelete: () => _confirmDelete(context, song),
-                    );
-                  },
-                ),
+      body: Column(
+        children: [
+          if (driveSync.shouldShowSetupPrompt)
+            _DriveSyncPromptBanner(driveSync: driveSync),
+          Expanded(
+            child: library.loading
+                ? const Center(child: CircularProgressIndicator())
+                : songs.isEmpty
+                    ? _EmptyState(
+                        favoritesOnly: _favoritesOnly,
+                        hasQuery: library.query.isNotEmpty,
+                      )
+                    : ListView.separated(
+                        itemCount: songs.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (context, i) {
+                          final song = songs[i];
+                          return SongListTile(
+                            song: song,
+                            onTap: () => _openSong(context, song),
+                            onToggleFavorite: () => context
+                                .read<LibraryProvider>()
+                                .toggleFavorite(song),
+                            onDelete: () => _confirmDelete(context, song),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _import(context),
+        onPressed: () => _showImportMenu(context),
         tooltip: 'Import songs',
         child: const Icon(Icons.add),
       ),
@@ -109,25 +120,65 @@ class _LibraryScreenState extends State<LibraryScreen> {
           initialShowChords: settings.showChords,
           initialFontSize: settings.fontSize,
           initialScrollSpeed: settings.scrollSpeed,
+          initialScrollPxPerBeat: settings.scrollPxPerBeat,
         ),
       ),
     );
   }
 
-  Future<void> _import(BuildContext context) async {
-    final library = context.read<LibraryProvider>();
-    final imported = await library.importFiles();
-    if (!context.mounted) return;
-    final count = imported.length;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(count == 0
-            ? 'No files imported'
-            : count == 1
-                ? '1 song imported'
-                : '$count songs imported'),
+  Future<void> _showImportMenu(BuildContext context) async {
+    final choice = await showModalBottomSheet<_ImportChoice>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.description_outlined),
+              title: const Text('Import files'),
+              subtitle: const Text('Pick one or more .cho/.pro/.txt files'),
+              onTap: () => Navigator.pop(ctx, _ImportChoice.files),
+            ),
+            ListTile(
+              leading: const Icon(Icons.folder_outlined),
+              title: const Text('Import folder'),
+              subtitle: const Text('Import every song file in a folder'),
+              onTap: () => Navigator.pop(ctx, _ImportChoice.folder),
+            ),
+          ],
+        ),
       ),
     );
+    if (choice == null || !context.mounted) return;
+
+    final library = context.read<LibraryProvider>();
+    final result = choice == _ImportChoice.files
+        ? await library.importFiles()
+        : await library.importFolder();
+    if (!context.mounted) return;
+
+    if (result.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.error!)),
+      );
+      return;
+    }
+
+    final imported = result.imported.length;
+    final skipped = result.skipped;
+    final String message;
+    if (imported == 0 && skipped == 0) {
+      message = 'No files imported';
+    } else {
+      final parts = <String>[
+        imported == 1 ? '1 song imported' : '$imported songs imported',
+      ];
+      if (skipped > 0) {
+        parts.add(skipped == 1 ? '1 skipped' : '$skipped skipped');
+      }
+      message = parts.join(' · ');
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _confirmDelete(BuildContext context, Song song) async {
@@ -149,6 +200,45 @@ class _LibraryScreenState extends State<LibraryScreen> {
     if (confirmed == true && context.mounted) {
       await context.read<LibraryProvider>().deleteSong(song.id!);
     }
+  }
+}
+
+enum _ImportChoice { files, folder }
+
+class _DriveSyncPromptBanner extends StatelessWidget {
+  final DriveSyncProvider driveSync;
+  const _DriveSyncPromptBanner({required this.driveSync});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.secondaryContainer,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+        child: Row(
+          children: [
+            Icon(Icons.cloud_outlined, color: theme.colorScheme.onSecondaryContainer),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Auto-sync songs from Google Drive',
+                style: TextStyle(color: theme.colorScheme.onSecondaryContainer),
+              ),
+            ),
+            TextButton(
+              onPressed: driveSync.pickRootFolder,
+              child: const Text('Set up'),
+            ),
+            IconButton(
+              icon: Icon(Icons.close, color: theme.colorScheme.onSecondaryContainer),
+              tooltip: 'Dismiss',
+              onPressed: driveSync.dismissSetupPrompt,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

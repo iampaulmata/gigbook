@@ -36,12 +36,20 @@ class LibraryProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<List<Song>> importFiles() async {
-    final imported = await ImportService.pickAndImport();
-    if (imported.isNotEmpty) {
+  Future<ImportResult> importFiles() async {
+    final result = await ImportService.pickAndImportFiles();
+    if (result.imported.isNotEmpty) {
       await loadSongs();
     }
-    return imported;
+    return result;
+  }
+
+  Future<ImportResult> importFolder() async {
+    final result = await ImportService.pickAndImportFolder();
+    if (result.imported.isNotEmpty) {
+      await loadSongs();
+    }
+    return result;
   }
 
   Future<void> deleteSong(int id) async {

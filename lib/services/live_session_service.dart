@@ -84,6 +84,11 @@ class LiveSessionHost {
   final _nearby = Nearby();
   final _connectedEndpoints = <String>{};
 
+  /// The most recently broadcast message, resent to any endpoint that
+  /// connects afterwards so a bandmate joining or reconnecting mid-song
+  /// catches up immediately instead of waiting for the host's next move.
+  LiveSessionMessage? _lastMessage;
+
   int get connectedCount => _connectedEndpoints.length;
 
   Future<void> start(String hostName) async {
@@ -102,6 +107,10 @@ class LiveSessionHost {
       onConnectionResult: (endpointId, status) {
         if (status == Status.CONNECTED) {
           _connectedEndpoints.add(endpointId);
+          final lastMessage = _lastMessage;
+          if (lastMessage != null) {
+            _nearby.sendBytesPayload(endpointId, _encode(lastMessage));
+          }
         } else {
           _connectedEndpoints.remove(endpointId);
         }
@@ -113,6 +122,7 @@ class LiveSessionHost {
   }
 
   void broadcast(LiveSessionMessage message) {
+    _lastMessage = message;
     final bytes = _encode(message);
     for (final endpointId in List.of(_connectedEndpoints)) {
       _nearby.sendBytesPayload(endpointId, bytes);
@@ -123,6 +133,7 @@ class LiveSessionHost {
     await _nearby.stopAdvertising();
     await _nearby.stopAllEndpoints();
     _connectedEndpoints.clear();
+    _lastMessage = null;
   }
 }
 

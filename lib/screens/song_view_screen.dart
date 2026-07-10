@@ -439,6 +439,12 @@ class _SongViewScreenState extends State<SongViewScreen> {
               },
               child: SingleChildScrollView(
                 controller: _scrollController,
+                // A follower's screen is driven entirely by the host's
+                // broadcast position — their own drag gestures must not
+                // move it independently (FR-003).
+                physics: widget.liveFollowing
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                 child: ChordProRenderer(
                   content: _song.content,

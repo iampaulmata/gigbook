@@ -69,6 +69,7 @@ class LiveSessionProvider extends ChangeNotifier {
     required Song song,
     bool isPlaying = false,
     double scrollSpeedPxPerSec = 50.0,
+    double scrollFraction = 0.0,
   }) {
     if (_role != LiveSessionRole.hosting) return;
     _host.broadcast(LiveSessionMessage(
@@ -77,6 +78,7 @@ class LiveSessionProvider extends ChangeNotifier {
       artist: song.artist,
       isPlaying: isPlaying,
       scrollSpeedPxPerSec: scrollSpeedPxPerSec,
+      scrollFraction: scrollFraction,
     ));
   }
 

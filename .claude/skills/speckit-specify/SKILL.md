@@ -73,27 +73,22 @@ Given that feature description, do this:
      - "Create a dashboard for analytics" → "analytics-dashboard"
      - "Fix payment processing timeout bug" → "fix-payment-timeout"
 
-2. **Branch creation** (optional, via hook):
+2. **Create and switch to the feature branch, then create the spec feature directory** (this is always done directly by this command — it is the first substantive action taken for a new feature, and does not depend on any hook or extension being installed):
 
-   If a `before_specify` hook ran successfully in the Pre-Execution Checks above, it will have created/switched to a git branch and output JSON containing `BRANCH_NAME` and `FEATURE_NUM`. Note these values for reference, but the branch name does **not** dictate the spec directory name.
-
-   If the user explicitly provided `GIT_BRANCH_NAME`, pass it through to the hook so the branch script uses the exact value as the branch name (bypassing all prefix/suffix generation).
-
-3. **Create the spec feature directory**:
-
-   Specs live under the default `specs/` directory unless the user explicitly provides `SPECIFY_FEATURE_DIRECTORY`.
-
-   **Resolution order for `SPECIFY_FEATURE_DIRECTORY`**:
-   1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` (e.g., via environment variable, argument, or configuration), use it as-is
-   2. Otherwise, auto-generate it under `specs/`:
+   **Resolution order for the feature name** (used for both the git branch and the spec directory, so they match by default):
+   1. If the user explicitly provided `SPECIFY_FEATURE_DIRECTORY` and/or `GIT_BRANCH_NAME`, use those exact values as-is (they may differ from each other if the user wants that).
+   2. Otherwise, auto-generate one name and use it for both:
       - Check `.specify/init-options.json` for `feature_numbering` (preferred) or `branch_numbering` (deprecated, migration only — will be removed in a future release)
       - If `"timestamp"`: prefix is `YYYYMMDD-HHMMSS` (current timestamp)
       - If `"sequential"` or absent: prefix is `NNN` (next available 3-digit number after scanning existing directories in `specs/`)
-      - Construct the directory name: `<prefix>-<short-name>` (e.g., `003-user-auth` or `20260319-143022-user-auth`)
-      - Set `SPECIFY_FEATURE_DIRECTORY` to `specs/<directory-name>`
+      - Construct the name: `<prefix>-<short-name>` (e.g., `003-user-auth` or `20260319-143022-user-auth`)
+      - Set `SPECIFY_FEATURE_DIRECTORY` to `specs/<name>` and `GIT_BRANCH_NAME` to `<name>`
       - If `branch_numbering` was used (and `feature_numbering` was absent), emit a one-line warning: "⚠️ `branch_numbering` in init-options.json is deprecated. Rename to `feature_numbering`."
 
-   **Create the directory and spec file**:
+   **Idempotency guard**: since this command can also *update* an existing spec, first check whether a local git branch named `GIT_BRANCH_NAME` or a directory at `SPECIFY_FEATURE_DIRECTORY` already exists. If either does, this is a continuation of an existing feature — check out the existing branch (`git checkout <name>`) instead of creating a new one, and skip straight to loading/updating the existing `spec.md` rather than treating it as a fresh feature.
+
+   **Otherwise, for a genuinely new feature**:
+   - Create and switch to the branch: `git checkout -b <GIT_BRANCH_NAME>` (branching from whatever is currently checked out — no automatic fetch/pull of any base branch).
    - `mkdir -p SPECIFY_FEATURE_DIRECTORY`
    - Resolve the active `spec-template` through the Spec Kit preset/template resolution stack (equivalent to `specify preset resolve spec-template`)
    - Copy the resolved `spec-template` file to `SPECIFY_FEATURE_DIRECTORY/spec.md` as the starting point
@@ -109,8 +104,8 @@ Given that feature description, do this:
 
    **IMPORTANT**:
    - You must only create one feature per `/speckit-specify` invocation
-   - The spec directory name and the git branch name are independent — they may be the same but that is the user's choice
-   - The spec directory and file are always created by this command, never by the hook
+   - The spec directory name and the git branch name match by default; they only diverge if the user explicitly overrides one of `SPECIFY_FEATURE_DIRECTORY` / `GIT_BRANCH_NAME`
+   - Branch and directory creation are always handled directly by this command — never delegated to a hook
 
 4. Load the resolved active `spec-template` file to understand required sections.
 
@@ -277,8 +272,9 @@ Report completion to the user with:
 - `SPEC_FILE` — the spec file path
 - Checklist results summary
 - Readiness for the next phase (`/speckit-clarify` or `/speckit-plan`)
+- `GIT_BRANCH_NAME` — the branch that was created (or reused) and checked out
 
-**NOTE:** Branch creation is handled by the `before_specify` hook (git extension). Spec directory and file creation are always handled by this core command.
+**NOTE:** Branch creation and spec directory/file creation are always handled directly by this core command — never delegated to a hook.
 
 ## Quick Guidelines
 

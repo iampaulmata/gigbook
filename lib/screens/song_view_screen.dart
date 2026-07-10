@@ -147,6 +147,17 @@ class _SongViewScreenState extends State<SongViewScreen> {
         _stopAutoScroll();
       }
     }
+    _applyScrollFraction(message.scrollFraction);
+  }
+
+  /// Moves this follower's view to the host's broadcast position, mapped
+  /// against this device's own scroll extent so it lands on the
+  /// corresponding passage even if screen size/font/chord settings differ.
+  void _applyScrollFraction(double fraction) {
+    if (!_scrollController.hasClients) return;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    if (maxExtent <= 0) return;
+    _scrollController.jumpTo((fraction * maxExtent).clamp(0.0, maxExtent));
   }
 
   double get _effectiveScrollSpeed {

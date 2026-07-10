@@ -58,6 +58,8 @@ class _SongViewScreenState extends State<SongViewScreen> {
   Timer? _scrollTimer;
   bool _autoScrollActive = false;
   bool _showSpeedPanel = false;
+  DateTime? _lastScrollBroadcastAt;
+  static const _scrollBroadcastThrottle = Duration(milliseconds: 120);
 
   late double _fontSize;
   late bool _showChords;
@@ -95,7 +97,35 @@ class _SongViewScreenState extends State<SongViewScreen> {
           song: _song,
           isPlaying: _autoScrollActive,
           scrollSpeedPxPerSec: _effectiveScrollSpeed,
+          scrollFraction: _currentScrollFraction,
         );
+  }
+
+  /// How far through the song this view is currently scrolled, as a
+  /// proportion of its own scrollable extent — see [LiveSessionMessage
+  /// .scrollFraction] for why this is proportional rather than a raw pixel
+  /// offset.
+  double get _currentScrollFraction {
+    if (!_scrollController.hasClients) return 0.0;
+    final pos = _scrollController.position;
+    if (pos.maxScrollExtent <= 0) return 0.0;
+    return (pos.pixels / pos.maxScrollExtent).clamp(0.0, 1.0);
+  }
+
+  /// Broadcasts the host's current scroll position, throttled to
+  /// [_scrollBroadcastThrottle] while dragging so a live session doesn't get
+  /// a message per pixel — [force] bypasses the throttle so the position the
+  /// host actually stops on is always sent (used on scroll-end).
+  void _maybeBroadcastScrollPosition({bool force = false}) {
+    if (widget.liveFollowing) return;
+    final now = DateTime.now();
+    if (!force &&
+        _lastScrollBroadcastAt != null &&
+        now.difference(_lastScrollBroadcastAt!) < _scrollBroadcastThrottle) {
+      return;
+    }
+    _lastScrollBroadcastAt = now;
+    _broadcastNowPlaying();
   }
 
   /// Reacts to the host's playback broadcasts while following — only for
@@ -396,9 +426,15 @@ class _SongViewScreenState extends State<SongViewScreen> {
       body: Column(
         children: [
           Expanded(
-            child: NotificationListener<UserScrollNotification>(
+            child: NotificationListener<ScrollNotification>(
               onNotification: (n) {
-                if (_autoScrollActive) _stopAutoScroll();
+                if (n is UserScrollNotification) {
+                  if (_autoScrollActive) _stopAutoScroll();
+                } else if (n is ScrollUpdateNotification) {
+                  _maybeBroadcastScrollPosition();
+                } else if (n is ScrollEndNotification) {
+                  _maybeBroadcastScrollPosition(force: true);
+                }
                 return false;
               },
               child: SingleChildScrollView(

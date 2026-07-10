@@ -85,7 +85,7 @@ Single Flutter project (existing app) — `lib/` for source, `test/` for tests. 
 
 **Purpose**: Confirm the feature doesn't regress existing behavior or violate project quality gates
 
-- [ ] T013 [P] Run `flutter analyze` from the repo root and confirm no new warnings (constitution's Technology Constraints gate).
+- [X] T013 [P] Run `flutter analyze` from the repo root and confirm no new warnings (constitution's Technology Constraints gate).
 - [ ] T014 Run Quickstart Scenario 5 from `specs/003-live-scroll-sync/quickstart.md` ("Pause following" suppresses scroll sync) to confirm the existing pause behavior isn't regressed — per `research.md`'s finding, this needs no new code, only verification.
 
 ---

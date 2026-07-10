@@ -31,6 +31,12 @@ class SongViewScreen extends StatefulWidget {
   final bool initialAutoScrollActive;
   final double initialLiveScrollSpeed;
 
+  /// The host's scroll position at the moment this follower's route was
+  /// built — applied once the view has laid out, so a bandmate who just
+  /// joined or reconnected mid-song lands on the host's current passage
+  /// without waiting for the host's next scroll.
+  final double initialScrollFraction;
+
   const SongViewScreen({
     super.key,
     required this.song,
@@ -44,6 +50,7 @@ class SongViewScreen extends StatefulWidget {
     this.liveFollowing = false,
     this.initialAutoScrollActive = false,
     this.initialLiveScrollSpeed = 50.0,
+    this.initialScrollFraction = 0.0,
   });
 
   @override
@@ -84,6 +91,11 @@ class _SongViewScreenState extends State<SongViewScreen> {
     if (widget.liveFollowing) {
       context.read<LiveSessionProvider>().addListener(_onLiveFollowUpdate);
       if (widget.initialAutoScrollActive) _startAutoScroll();
+      // The scroll extent isn't known until after the first layout, so this
+      // waits a frame before jumping to the host's position at join time.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyScrollFraction(widget.initialScrollFraction);
+      });
     } else {
       _broadcastNowPlaying();
     }

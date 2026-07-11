@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../models/custom_theme.dart';
 import '../providers/settings_provider.dart';
 import '../services/contrast.dart';
+import '../services/theme_share_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/theme_preview.dart';
 
@@ -225,6 +226,14 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
     }
   }
 
+  /// Shares the currently-loaded saved theme via the device's standard
+  /// share sheet (FR-012). Only available once a saved theme is loaded —
+  /// _editing exactly matches what's saved at that point.
+  Future<void> _share() async {
+    if (_loadedName == null) return;
+    await ThemeShareService.share(_editing);
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
@@ -258,12 +267,18 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
                     },
                   ),
                 ),
-                if (_loadedName != null)
+                if (_loadedName != null) ...[
+                  IconButton(
+                    tooltip: 'Share "$_loadedName"',
+                    icon: const Icon(Icons.share_outlined),
+                    onPressed: _share,
+                  ),
                   IconButton(
                     tooltip: 'Delete "$_loadedName"',
                     icon: const Icon(Icons.delete_outline),
                     onPressed: _delete,
                   ),
+                ],
               ],
             ),
             const SizedBox(height: 16),

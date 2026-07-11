@@ -8,6 +8,29 @@ import '../services/contrast.dart';
 import '../theme/app_theme.dart';
 import '../widgets/theme_preview.dart';
 
+/// Asks the user to confirm overwriting an existing saved theme named
+/// [name] (FR-017). Shared by the manual save flow here and by the import
+/// flow's name-collision handling (FR-019).
+Future<bool> confirmNameCollision(BuildContext context, String name) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: const Text('Theme name already used'),
+      content: Text(
+          'A saved theme named "$name" already exists. Overwrite it with these colors?'),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Overwrite')),
+      ],
+    ),
+  );
+  return confirmed ?? false;
+}
+
 class CustomThemeScreen extends StatefulWidget {
   const CustomThemeScreen({super.key});
 
@@ -18,6 +41,12 @@ class CustomThemeScreen extends StatefulWidget {
 class _CustomThemeScreenState extends State<CustomThemeScreen> {
   late CustomTheme _editing;
   late final TextEditingController _nameController;
+  // The name of the theme this editing session is considered to be editing
+  // in place (from initial load or the most recent successful save) — null
+  // for a brand-new, never-saved theme. Distinguishes "saving under the same
+  // name as what's loaded" (no collision) from "saving under a name that
+  // collides with a *different* saved theme" (FR-017, needs confirmation).
+  String? _loadedName;
 
   @override
   void initState() {
@@ -26,6 +55,7 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
     final activeCustom = settings.activeCustomTheme;
     if (activeCustom != null) {
       _editing = activeCustom;
+      _loadedName = activeCustom.name;
     } else {
       // No custom theme yet — seed the editor from the currently active
       // app theme's colors as a starting point (spec Assumptions).
@@ -40,6 +70,7 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
         sectionHeaderColor: chordProColors?.sectionHeader ?? scheme.primary,
         commentColor: chordProColors?.comment ?? scheme.onSurfaceVariant,
       );
+      _loadedName = null;
     }
     _nameController = TextEditingController(text: _editing.name);
   }
@@ -119,16 +150,27 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
       return;
     }
 
+    // A collision only matters against a *different* saved theme — saving
+    // back under the name we loaded is an ordinary in-place update, not an
+    // overwrite that needs confirming (FR-017).
+    final settings = context.read<SettingsProvider>();
+    if (name != _loadedName && settings.customThemeNameExists(name)) {
+      final confirmed = await confirmNameCollision(context, name);
+      if (!confirmed) return;
+    }
+
     // Saving under the currently-loaded name updates that theme in place;
     // saving under a different name creates a new one (FR-005) — either way
-    // SettingsProvider.saveCustomTheme upserts by name. _editing is updated
-    // to the saved name so the dropdown/name field reflect "new" as loaded,
-    // rather than still pointing at whatever was loaded before the edit.
+    // SettingsProvider.saveCustomTheme upserts by name. _editing/_loadedName
+    // are updated to the saved name so the dropdown/name field reflect the
+    // save as loaded, rather than still pointing at what was loaded before.
     final saved = _editing.copyWith(name: name);
-    final settings = context.read<SettingsProvider>();
     await settings.saveCustomTheme(saved);
     if (mounted) {
-      setState(() => _editing = saved);
+      setState(() {
+        _editing = saved;
+        _loadedName = name;
+      });
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Saved "$name"')));
     }
@@ -139,6 +181,7 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
   void _recall(CustomTheme theme) {
     setState(() {
       _editing = theme;
+      _loadedName = theme.name;
       _nameController.text = theme.name;
     });
   }

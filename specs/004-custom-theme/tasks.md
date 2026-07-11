@@ -89,7 +89,7 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T017 [P] [US3] Write theme JSON parsing tests in `test/services/theme_json_test.dart` covering: a valid file, malformed JSON, wrong/missing `type`, a newer/unrecognized `version`, and missing/malformed `colors.*` fields (contracts/theme-json-schema.md). Tests MUST fail before implementation per Constitution Principle IV
+- [X] T017 [P] [US3] Write theme JSON parsing tests in `test/services/theme_json_test.dart` covering: a valid file, malformed JSON, wrong/missing `type`, a newer/unrecognized `version`, and missing/malformed `colors.*` fields (contracts/theme-json-schema.md). Tests MUST fail before implementation per Constitution Principle IV
 - [ ] T018 [US3] Implement `lib/services/theme_json.dart` — `parseThemeJson()` and `ThemeFormatException`, per contracts/theme-json-schema.md, to make T017 pass (depends on T017)
 - [ ] T019 [US3] Implement `lib/services/theme_share_service.dart` — export via `share_plus` (write a temp `<name>.gigbook-theme.json`, `SharePlus.instance.share`) and import via `file_picker` (`pickFiles(type: FileType.custom, allowedExtensions: ['json'])` + `parseThemeJson`), mirroring `setlist_share_service.dart` exactly (depends on T002, T018)
 - [ ] T020 [US3] Add a "Share" action per saved theme in `lib/screens/custom_theme_screen.dart` invoking `ThemeShareService.share` (FR-012) (depends on T013, T019)

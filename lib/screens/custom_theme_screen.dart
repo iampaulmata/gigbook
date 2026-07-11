@@ -119,9 +119,16 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
       return;
     }
 
+    // Saving under the currently-loaded name updates that theme in place;
+    // saving under a different name creates a new one (FR-005) — either way
+    // SettingsProvider.saveCustomTheme upserts by name. _editing is updated
+    // to the saved name so the dropdown/name field reflect "new" as loaded,
+    // rather than still pointing at whatever was loaded before the edit.
+    final saved = _editing.copyWith(name: name);
     final settings = context.read<SettingsProvider>();
-    await settings.saveCustomTheme(_editing.copyWith(name: name));
+    await settings.saveCustomTheme(saved);
     if (mounted) {
+      setState(() => _editing = saved);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Saved "$name"')));
     }

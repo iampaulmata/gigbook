@@ -73,7 +73,7 @@ description: "Task list template for feature implementation"
 ### Implementation for User Story 2
 
 - [X] T013 [US2] Add a dropdown selector to `lib/screens/custom_theme_screen.dart` listing `SettingsProvider.getCustomThemes()`, recalling the selected theme's colors into the editable state and preview (FR-006, FR-007) (depends on T010)
-- [ ] T014 [US2] Implement save-as-update vs. save-as-new in `lib/screens/custom_theme_screen.dart`'s save flow: saving under the currently-loaded name updates that theme in place; saving under a different name creates a new one (FR-005) (depends on T013)
+- [X] T014 [US2] Implement save-as-update vs. save-as-new in `lib/screens/custom_theme_screen.dart`'s save flow: saving under the currently-loaded name updates that theme in place; saving under a different name creates a new one (FR-005) (depends on T013)
 - [ ] T015 [US2] Implement a name-collision confirmation prompt in `lib/screens/custom_theme_screen.dart` for manual saves that match an existing theme's name (FR-017); structure it for reuse by User Story 3's import flow (depends on T014)
 - [ ] T016 [US2] Add a delete action with confirmation dialog for saved themes in `lib/screens/custom_theme_screen.dart` (FR-015), calling `SettingsProvider.deleteCustomTheme` (whose fallback behavior was implemented in T005) (depends on T013)
 

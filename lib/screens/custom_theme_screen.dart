@@ -127,13 +127,45 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
     }
   }
 
+  /// Recalls a saved theme's colors into the editor and preview (FR-006,
+  /// FR-007).
+  void _recall(CustomTheme theme) {
+    setState(() {
+      _editing = theme;
+      _nameController.text = theme.name;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
     return Scaffold(
       appBar: AppBar(title: const Text('Custom Theme')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (settings.customThemes.isNotEmpty) ...[
+            DropdownButtonFormField<String>(
+              initialValue: settings.customThemeNameExists(_editing.name)
+                  ? _editing.name
+                  : null,
+              decoration: const InputDecoration(
+                labelText: 'Load a saved theme',
+                border: OutlineInputBorder(),
+              ),
+              items: [
+                for (final t in settings.customThemes)
+                  DropdownMenuItem(value: t.name, child: Text(t.name)),
+              ],
+              onChanged: (name) {
+                if (name == null) return;
+                final theme =
+                    settings.customThemes.firstWhere((t) => t.name == name);
+                _recall(theme);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
           TextField(
             controller: _nameController,
             decoration: const InputDecoration(

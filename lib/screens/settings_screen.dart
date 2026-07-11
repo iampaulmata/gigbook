@@ -6,6 +6,7 @@ import '../providers/library_provider.dart';
 import '../providers/live_session_provider.dart';
 import '../providers/setlist_provider.dart';
 import '../providers/settings_provider.dart';
+import 'custom_theme_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -25,9 +26,19 @@ class SettingsScreen extends StatelessWidget {
           _SectionHeader('Appearance'),
           ListTile(
             title: const Text('Theme'),
-            subtitle: Text(_themeName(settings.themeMode)),
+            subtitle: Text(settings.useCustomTheme
+                ? 'Custom${settings.activeCustomThemeName != null ? ' (${settings.activeCustomThemeName})' : ''}'
+                : _themeName(settings.themeMode)),
             leading: const Icon(Icons.brightness_6_outlined),
             onTap: () => _pickTheme(context, settings),
+          ),
+          ListTile(
+            title: const Text('Custom Theme'),
+            subtitle: const Text('Design your own colors'),
+            leading: const Icon(Icons.palette_outlined),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CustomThemeScreen()),
+            ),
           ),
 
           // ── Song viewer ────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/custom_theme.dart';
 import '../providers/settings_provider.dart';
+import '../services/contrast.dart';
 import '../theme/app_theme.dart';
 import '../widgets/theme_preview.dart';
 
@@ -69,9 +70,55 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
     onChanged(picked);
   }
 
+  /// Text-bearing roles checked against the background for FR-018 —
+  /// the label shown to the user matches the row label they'd fix.
+  static const _contrastRoles = {
+    'Text / lyrics': _RoleColor.text,
+    'Chords': _RoleColor.chord,
+    'Section headers': _RoleColor.sectionHeader,
+    'Comments / annotations': _RoleColor.comment,
+  };
+
+  Color _colorFor(_RoleColor role) {
+    switch (role) {
+      case _RoleColor.text:
+        return _editing.textColor;
+      case _RoleColor.chord:
+        return _editing.chordColor;
+      case _RoleColor.sectionHeader:
+        return _editing.sectionHeaderColor;
+      case _RoleColor.comment:
+        return _editing.commentColor;
+    }
+  }
+
+  bool _rowContrastOk(_RoleColor role) {
+    return meetsMinimumContrast(_editing.backgroundColor, _colorFor(role));
+  }
+
+  List<String> _failingRoleLabels() {
+    return _contrastRoles.entries
+        .where((e) => !_rowContrastOk(e.value))
+        .map((e) => e.key)
+        .toList();
+  }
+
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
+
+    final failing = _failingRoleLabels();
+    if (failing.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Not readable enough against the background: ${failing.join(', ')}. '
+              'Adjust those colors (see the warning icons below) and try again.'),
+        ),
+      );
+      return;
+    }
+
     final settings = context.read<SettingsProvider>();
     await settings.saveCustomTheme(_editing.copyWith(name: name));
     if (mounted) {
@@ -104,18 +151,21 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
           _ColorRow(
             label: 'Text / lyrics',
             color: _editing.textColor,
+            contrastOk: _rowContrastOk(_RoleColor.text),
             onTap: () => _pickColor('text', _editing.textColor,
                 (c) => setState(() => _editing = _editing.copyWith(textColor: c))),
           ),
           _ColorRow(
             label: 'Chords',
             color: _editing.chordColor,
+            contrastOk: _rowContrastOk(_RoleColor.chord),
             onTap: () => _pickColor('chord', _editing.chordColor,
                 (c) => setState(() => _editing = _editing.copyWith(chordColor: c))),
           ),
           _ColorRow(
             label: 'Section headers',
             color: _editing.sectionHeaderColor,
+            contrastOk: _rowContrastOk(_RoleColor.sectionHeader),
             onTap: () => _pickColor(
                 'section header',
                 _editing.sectionHeaderColor,
@@ -125,6 +175,7 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
           _ColorRow(
             label: 'Comments / annotations',
             color: _editing.commentColor,
+            contrastOk: _rowContrastOk(_RoleColor.comment),
             onTap: () => _pickColor('comment', _editing.commentColor,
                 (c) => setState(() => _editing = _editing.copyWith(commentColor: c))),
           ),
@@ -146,20 +197,45 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
   }
 }
 
+/// The four text-bearing color roles checked for contrast against the
+/// background (FR-018) — background itself isn't compared against anything.
+enum _RoleColor { text, chord, sectionHeader, comment }
+
 class _ColorRow extends StatelessWidget {
   final String label;
   final Color color;
   final VoidCallback onTap;
+  final bool contrastOk;
 
-  const _ColorRow(
-      {required this.label, required this.color, required this.onTap});
+  const _ColorRow({
+    required this.label,
+    required this.color,
+    required this.onTap,
+    this.contrastOk = true,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return ListTile(
       contentPadding: EdgeInsets.zero,
       title: Text(label),
-      subtitle: Text(colorToHex(color)),
+      subtitle: contrastOk
+          ? Text(colorToHex(color))
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.warning_amber_outlined,
+                    size: 16, color: theme.colorScheme.error),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    '${colorToHex(color)} — too low contrast against the background',
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
       trailing: GestureDetector(
         onTap: onTap,
         child: Container(
@@ -168,7 +244,12 @@ class _ColorRow extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             shape: BoxShape.circle,
-            border: Border.all(color: Theme.of(context).colorScheme.outline),
+            border: Border.all(
+              color: contrastOk
+                  ? theme.colorScheme.outline
+                  : theme.colorScheme.error,
+              width: contrastOk ? 1 : 2,
+            ),
           ),
         ),
       ),

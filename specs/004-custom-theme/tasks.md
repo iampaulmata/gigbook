@@ -58,7 +58,7 @@ description: "Task list template for feature implementation"
 - [X] T009 [US1] Create the Custom Theme screen scaffold in `lib/screens/custom_theme_screen.dart` — five `flex_color_picker` controls (background, text, chord, section header, comment) bound to local editable `CustomTheme` state, feeding `ThemePreview` for live updates (depends on T001, T002, T006)
 - [X] T010 [US1] Implement the save flow in `lib/screens/custom_theme_screen.dart`: name input, contrast validation via `lib/services/contrast.dart` against all four text-bearing pairs, blocking save and indicating the failing pair(s) when below threshold (FR-018), otherwise persisting via `SettingsProvider.saveCustomTheme` (depends on T004, T005, T009)
 - [X] T011 [US1] Add a "Custom Theme" entry point under the Appearance section in `lib/screens/settings_screen.dart`, navigating to `CustomThemeScreen` (FR-001) (depends on T009)
-- [ ] T012 [US1] Extend the main theme picker dialog in `lib/screens/settings_screen.dart` with a "Custom" option (FR-009): with no saved themes it routes to `CustomThemeScreen` (FR-011); otherwise it applies the most recently selected/saved custom theme via `SettingsProvider.setUseCustomTheme` (FR-010) (depends on T005, T008, T011)
+- [X] T012 [US1] Extend the main theme picker dialog in `lib/screens/settings_screen.dart` with a "Custom" option (FR-009): with no saved themes it routes to `CustomThemeScreen` (FR-011); otherwise it applies the most recently selected/saved custom theme via `SettingsProvider.setUseCustomTheme` (FR-010) (depends on T005, T008, T011)
 
 **Checkpoint**: User Story 1 is fully functional and independently testable (MVP)
 

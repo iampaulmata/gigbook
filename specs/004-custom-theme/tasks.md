@@ -35,7 +35,7 @@ description: "Task list template for feature implementation"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 [P] Create `CustomTheme` model in `lib/models/custom_theme.dart` — fields `name`, `backgroundColor`, `textColor`, `chordColor`, `sectionHeaderColor`, `commentColor`, `formatVersion` (data-model.md), with `toJson()`/`fromJson()` using `#RRGGBB` hex string colors
+- [X] T002 [P] Create `CustomTheme` model in `lib/models/custom_theme.dart` — fields `name`, `backgroundColor`, `textColor`, `chordColor`, `sectionHeaderColor`, `commentColor`, `formatVersion` (data-model.md), with `toJson()`/`fromJson()` using `#RRGGBB` hex string colors
 - [ ] T003 [P] Write contrast-ratio utility tests in `test/services/contrast_test.dart` — WCAG relative-luminance formula, 4.5:1 AA threshold (spec Assumptions), covering a passing pair, a failing pair, and boundary cases. Tests MUST fail (no implementation exists yet) per Constitution Principle IV
 - [ ] T004 Implement the contrast-ratio utility in `lib/services/contrast.dart` to make T003 pass (depends on T003)
 - [ ] T005 [P] Extend `SettingsProvider` in `lib/providers/settings_provider.dart`: add `useCustomTheme` (bool), `activeCustomThemeName` (String?), and CRUD for the saved-theme list (`getCustomThemes()`, `saveCustomTheme()`, `deleteCustomTheme()` — the latter MUST clear `activeCustomThemeName`/`useCustomTheme` and fall back to `ThemeMode.system` when deleting the currently-active theme (FR-016) — `setActiveCustomTheme()`, `setUseCustomTheme()`), persisted as a JSON-encoded list via `shared_preferences` keys `custom_themes` / `active_custom_theme_name` / `use_custom_theme` (research.md §4, depends on T002)

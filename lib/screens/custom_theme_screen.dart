@@ -186,6 +186,45 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
     });
   }
 
+  /// Deletes the currently-loaded saved theme after confirmation (FR-015) —
+  /// a destructive action, so it requires explicit confirmation like the
+  /// app's other delete flows (song/setlist deletion).
+  Future<void> _delete() async {
+    final name = _loadedName;
+    if (name == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Delete theme'),
+        content:
+            Text('Delete the saved theme "$name"? This cannot be undone.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final settings = context.read<SettingsProvider>();
+    // SettingsProvider.deleteCustomTheme already falls back to
+    // ThemeMode.system if this was the active app-wide theme (FR-016).
+    await settings.deleteCustomTheme(name);
+    if (mounted) {
+      setState(() {
+        _loadedName = null;
+        _nameController.clear();
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Deleted "$name"')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
@@ -195,24 +234,37 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           if (settings.customThemes.isNotEmpty) ...[
-            DropdownButtonFormField<String>(
-              initialValue: settings.customThemeNameExists(_editing.name)
-                  ? _editing.name
-                  : null,
-              decoration: const InputDecoration(
-                labelText: 'Load a saved theme',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                for (final t in settings.customThemes)
-                  DropdownMenuItem(value: t.name, child: Text(t.name)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    initialValue: settings.customThemeNameExists(_editing.name)
+                        ? _editing.name
+                        : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Load a saved theme',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final t in settings.customThemes)
+                        DropdownMenuItem(value: t.name, child: Text(t.name)),
+                    ],
+                    onChanged: (name) {
+                      if (name == null) return;
+                      final theme = settings.customThemes
+                          .firstWhere((t) => t.name == name);
+                      _recall(theme);
+                    },
+                  ),
+                ),
+                if (_loadedName != null)
+                  IconButton(
+                    tooltip: 'Delete "$_loadedName"',
+                    icon: const Icon(Icons.delete_outline),
+                    onPressed: _delete,
+                  ),
               ],
-              onChanged: (name) {
-                if (name == null) return;
-                final theme =
-                    settings.customThemes.firstWhere((t) => t.name == name);
-                _recall(theme);
-              },
             ),
             const SizedBox(height: 16),
           ],

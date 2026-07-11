@@ -148,6 +148,7 @@ class _HomeShellState extends State<_HomeShell> {
         liveFollowing: true,
         initialAutoScrollActive: message.isPlaying,
         initialLiveScrollSpeed: message.scrollSpeedPxPerSec,
+        initialScrollFraction: message.scrollFraction,
         initialShowChords: settings.showChords,
         initialFontSize: settings.fontSize,
       ),

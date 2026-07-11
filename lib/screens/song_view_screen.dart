@@ -31,6 +31,12 @@ class SongViewScreen extends StatefulWidget {
   final bool initialAutoScrollActive;
   final double initialLiveScrollSpeed;
 
+  /// The host's scroll position at the moment this follower's route was
+  /// built — applied once the view has laid out, so a bandmate who just
+  /// joined or reconnected mid-song lands on the host's current passage
+  /// without waiting for the host's next scroll.
+  final double initialScrollFraction;
+
   const SongViewScreen({
     super.key,
     required this.song,
@@ -44,6 +50,7 @@ class SongViewScreen extends StatefulWidget {
     this.liveFollowing = false,
     this.initialAutoScrollActive = false,
     this.initialLiveScrollSpeed = 50.0,
+    this.initialScrollFraction = 0.0,
   });
 
   @override
@@ -58,6 +65,8 @@ class _SongViewScreenState extends State<SongViewScreen> {
   Timer? _scrollTimer;
   bool _autoScrollActive = false;
   bool _showSpeedPanel = false;
+  DateTime? _lastScrollBroadcastAt;
+  static const _scrollBroadcastThrottle = Duration(milliseconds: 120);
 
   late double _fontSize;
   late bool _showChords;
@@ -82,6 +91,11 @@ class _SongViewScreenState extends State<SongViewScreen> {
     if (widget.liveFollowing) {
       context.read<LiveSessionProvider>().addListener(_onLiveFollowUpdate);
       if (widget.initialAutoScrollActive) _startAutoScroll();
+      // The scroll extent isn't known until after the first layout, so this
+      // waits a frame before jumping to the host's position at join time.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _applyScrollFraction(widget.initialScrollFraction);
+      });
     } else {
       _broadcastNowPlaying();
     }
@@ -95,7 +109,35 @@ class _SongViewScreenState extends State<SongViewScreen> {
           song: _song,
           isPlaying: _autoScrollActive,
           scrollSpeedPxPerSec: _effectiveScrollSpeed,
+          scrollFraction: _currentScrollFraction,
         );
+  }
+
+  /// How far through the song this view is currently scrolled, as a
+  /// proportion of its own scrollable extent — see [LiveSessionMessage
+  /// .scrollFraction] for why this is proportional rather than a raw pixel
+  /// offset.
+  double get _currentScrollFraction {
+    if (!_scrollController.hasClients) return 0.0;
+    final pos = _scrollController.position;
+    if (pos.maxScrollExtent <= 0) return 0.0;
+    return (pos.pixels / pos.maxScrollExtent).clamp(0.0, 1.0);
+  }
+
+  /// Broadcasts the host's current scroll position, throttled to
+  /// [_scrollBroadcastThrottle] while dragging so a live session doesn't get
+  /// a message per pixel — [force] bypasses the throttle so the position the
+  /// host actually stops on is always sent (used on scroll-end).
+  void _maybeBroadcastScrollPosition({bool force = false}) {
+    if (widget.liveFollowing) return;
+    final now = DateTime.now();
+    if (!force &&
+        _lastScrollBroadcastAt != null &&
+        now.difference(_lastScrollBroadcastAt!) < _scrollBroadcastThrottle) {
+      return;
+    }
+    _lastScrollBroadcastAt = now;
+    _broadcastNowPlaying();
   }
 
   /// Reacts to the host's playback broadcasts while following — only for
@@ -117,6 +159,17 @@ class _SongViewScreenState extends State<SongViewScreen> {
         _stopAutoScroll();
       }
     }
+    _applyScrollFraction(message.scrollFraction);
+  }
+
+  /// Moves this follower's view to the host's broadcast position, mapped
+  /// against this device's own scroll extent so it lands on the
+  /// corresponding passage even if screen size/font/chord settings differ.
+  void _applyScrollFraction(double fraction) {
+    if (!_scrollController.hasClients) return;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    if (maxExtent <= 0) return;
+    _scrollController.jumpTo((fraction * maxExtent).clamp(0.0, maxExtent));
   }
 
   double get _effectiveScrollSpeed {
@@ -396,13 +449,25 @@ class _SongViewScreenState extends State<SongViewScreen> {
       body: Column(
         children: [
           Expanded(
-            child: NotificationListener<UserScrollNotification>(
+            child: NotificationListener<ScrollNotification>(
               onNotification: (n) {
-                if (_autoScrollActive) _stopAutoScroll();
+                if (n is UserScrollNotification) {
+                  if (_autoScrollActive) _stopAutoScroll();
+                } else if (n is ScrollUpdateNotification) {
+                  _maybeBroadcastScrollPosition();
+                } else if (n is ScrollEndNotification) {
+                  _maybeBroadcastScrollPosition(force: true);
+                }
                 return false;
               },
               child: SingleChildScrollView(
                 controller: _scrollController,
+                // A follower's screen is driven entirely by the host's
+                // broadcast position — their own drag gestures must not
+                // move it independently (FR-003).
+                physics: widget.liveFollowing
+                    ? const NeverScrollableScrollPhysics()
+                    : null,
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                 child: ChordProRenderer(
                   content: _song.content,

@@ -14,12 +14,20 @@ class LiveSessionMessage {
   final bool isPlaying;
   final double scrollSpeedPxPerSec;
 
+  /// How far through the song the sender's view is scrolled, as
+  /// `pixels / maxScrollExtent` clamped to `[0.0, 1.0]` — proportional
+  /// rather than a raw pixel offset so it still maps to the right passage
+  /// on a receiving device with a different screen size or font/chord
+  /// display settings.
+  final double scrollFraction;
+
   const LiveSessionMessage({
     this.setlistName,
     required this.title,
     required this.artist,
     this.isPlaying = false,
     this.scrollSpeedPxPerSec = 50.0,
+    this.scrollFraction = 0.0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,6 +36,7 @@ class LiveSessionMessage {
         'artist': artist,
         'isPlaying': isPlaying,
         'scrollSpeedPxPerSec': scrollSpeedPxPerSec,
+        'scrollFraction': scrollFraction,
       };
 
   factory LiveSessionMessage.fromJson(Map<String, dynamic> json) =>
@@ -38,6 +47,7 @@ class LiveSessionMessage {
         isPlaying: json['isPlaying'] as bool? ?? false,
         scrollSpeedPxPerSec:
             (json['scrollSpeedPxPerSec'] as num?)?.toDouble() ?? 50.0,
+        scrollFraction: (json['scrollFraction'] as num?)?.toDouble() ?? 0.0,
       );
 }
 
@@ -74,6 +84,11 @@ class LiveSessionHost {
   final _nearby = Nearby();
   final _connectedEndpoints = <String>{};
 
+  /// The most recently broadcast message, resent to any endpoint that
+  /// connects afterwards so a bandmate joining or reconnecting mid-song
+  /// catches up immediately instead of waiting for the host's next move.
+  LiveSessionMessage? _lastMessage;
+
   int get connectedCount => _connectedEndpoints.length;
 
   Future<void> start(String hostName) async {
@@ -92,6 +107,10 @@ class LiveSessionHost {
       onConnectionResult: (endpointId, status) {
         if (status == Status.CONNECTED) {
           _connectedEndpoints.add(endpointId);
+          final lastMessage = _lastMessage;
+          if (lastMessage != null) {
+            _nearby.sendBytesPayload(endpointId, _encode(lastMessage));
+          }
         } else {
           _connectedEndpoints.remove(endpointId);
         }
@@ -103,6 +122,7 @@ class LiveSessionHost {
   }
 
   void broadcast(LiveSessionMessage message) {
+    _lastMessage = message;
     final bytes = _encode(message);
     for (final endpointId in List.of(_connectedEndpoints)) {
       _nearby.sendBytesPayload(endpointId, bytes);
@@ -113,6 +133,7 @@ class LiveSessionHost {
     await _nearby.stopAdvertising();
     await _nearby.stopAllEndpoints();
     _connectedEndpoints.clear();
+    _lastMessage = null;
   }
 }
 

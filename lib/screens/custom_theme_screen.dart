@@ -9,27 +9,73 @@ import '../services/theme_share_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/theme_preview.dart';
 
-/// Asks the user to confirm overwriting an existing saved theme named
-/// [name] (FR-017). Shared by the manual save flow here and by the import
-/// flow's name-collision handling (FR-019).
-Future<bool> confirmNameCollision(BuildContext context, String name) async {
-  final confirmed = await showDialog<bool>(
+/// Resolves a saved-theme name collision on [collidingName], shared by the
+/// manual save flow (FR-017) and the import flow (FR-019) — the two FRs
+/// call for different resolutions, so [allowOverwrite] switches between
+/// them:
+/// - Manual save (allowOverwrite: true): the user may explicitly overwrite
+///   the existing theme, or rename instead.
+/// - Import (allowOverwrite: false): overwrite is not offered at all — the
+///   user MUST choose a different name, since a passively-received import
+///   must never overwrite an existing theme (spec Edge Cases / FR-019).
+///
+/// Returns the name to save under, or null if the user cancelled.
+Future<String?> resolveNameCollision(
+  BuildContext context,
+  String collidingName, {
+  required bool allowOverwrite,
+}) async {
+  final controller = TextEditingController(text: collidingName);
+  final result = await showDialog<String>(
     context: context,
-    builder: (_) => AlertDialog(
-      title: const Text('Theme name already used'),
-      content: Text(
-          'A saved theme named "$name" already exists. Overwrite it with these colors?'),
-      actions: [
-        TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel')),
-        TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Overwrite')),
-      ],
+    builder: (dialogContext) => StatefulBuilder(
+      builder: (dialogContext, setDialogState) {
+        final newName = controller.text.trim();
+        final stillColliding = !allowOverwrite && newName == collidingName;
+        return AlertDialog(
+          title: const Text('Theme name already used'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('A saved theme named "$collidingName" already exists.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                decoration: InputDecoration(
+                  labelText: 'New name',
+                  errorText: stillColliding
+                      ? 'Choose a name different from "$collidingName"'
+                      : null,
+                ),
+                onChanged: (_) => setDialogState(() {}),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            if (allowOverwrite)
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, collidingName),
+                child: const Text('Overwrite'),
+              ),
+            FilledButton(
+              onPressed: newName.isEmpty || stillColliding
+                  ? null
+                  : () => Navigator.pop(dialogContext, newName),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
     ),
   );
-  return confirmed ?? false;
+  controller.dispose();
+  return result;
 }
 
 class CustomThemeScreen extends StatefulWidget {
@@ -136,7 +182,7 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
   }
 
   Future<void> _save() async {
-    final name = _nameController.text.trim();
+    var name = _nameController.text.trim();
     if (name.isEmpty) return;
 
     final failing = _failingRoleLabels();
@@ -153,11 +199,15 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
 
     // A collision only matters against a *different* saved theme — saving
     // back under the name we loaded is an ordinary in-place update, not an
-    // overwrite that needs confirming (FR-017).
+    // overwrite that needs confirming (FR-017). The user may resolve it by
+    // explicitly overwriting or by renaming.
     final settings = context.read<SettingsProvider>();
     if (name != _loadedName && settings.customThemeNameExists(name)) {
-      final confirmed = await confirmNameCollision(context, name);
-      if (!confirmed) return;
+      final resolved =
+          await resolveNameCollision(context, name, allowOverwrite: true);
+      if (resolved == null || !mounted) return;
+      name = resolved;
+      _nameController.text = name;
     }
 
     // Saving under the currently-loaded name updates that theme in place;
@@ -234,11 +284,58 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
     await ThemeShareService.share(_editing);
   }
 
+  /// Imports a theme from a shared `.gigbook-theme.json` file (FR-013),
+  /// resolving any name collision by renaming — never by silently
+  /// overwriting (FR-019) — and surfacing invalid/incompatible files as a
+  /// clear error (FR-014).
+  Future<void> _import() async {
+    final settings = context.read<SettingsProvider>();
+
+    CustomTheme imported;
+    try {
+      final picked = await ThemeShareService.pickAndParse();
+      if (picked == null) return; // user cancelled the file picker
+      imported = picked;
+    } on ThemeFormatException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.message)));
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    var name = imported.name;
+    if (settings.customThemeNameExists(name)) {
+      final resolved =
+          await resolveNameCollision(context, name, allowOverwrite: false);
+      if (resolved == null || !mounted) return;
+      name = resolved;
+    }
+
+    final toSave = imported.copyWith(name: name);
+    await settings.saveCustomTheme(toSave);
+    if (mounted) {
+      _recall(toSave);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Imported "$name"')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final settings = context.watch<SettingsProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Custom Theme')),
+      appBar: AppBar(
+        title: const Text('Custom Theme'),
+        actions: [
+          IconButton(
+            tooltip: 'Import a shared theme',
+            icon: const Icon(Icons.file_download_outlined),
+            onPressed: _import,
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [

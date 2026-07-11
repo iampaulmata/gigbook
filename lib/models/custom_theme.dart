@@ -42,9 +42,10 @@ class CustomTheme {
     );
   }
 
-  /// Nests colors under a `colors` key to match the shareable
-  /// `.gigbook-theme.json` contract exactly (contracts/theme-json-schema.md),
-  /// so local storage and the exported file use one shape.
+  /// Nests colors under a `colors` key and uses a `version` key, matching
+  /// the shareable `.gigbook-theme.json` contract exactly
+  /// (contracts/theme-json-schema.md) so local storage and the exported
+  /// file use one identical shape.
   Map<String, dynamic> toJson() => {
         'name': name,
         'colors': {
@@ -54,7 +55,7 @@ class CustomTheme {
           'sectionHeader': colorToHex(sectionHeaderColor),
           'comment': colorToHex(commentColor),
         },
-        'formatVersion': formatVersion,
+        'version': formatVersion,
       };
 
   factory CustomTheme.fromJson(Map<String, dynamic> json) {
@@ -66,7 +67,7 @@ class CustomTheme {
       chordColor: colorFromHex(colors['chord'] as String),
       sectionHeaderColor: colorFromHex(colors['sectionHeader'] as String),
       commentColor: colorFromHex(colors['comment'] as String),
-      formatVersion: json['formatVersion'] as int? ?? customThemeFormatVersion,
+      formatVersion: json['version'] as int? ?? customThemeFormatVersion,
     );
   }
 }

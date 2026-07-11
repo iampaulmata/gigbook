@@ -58,7 +58,7 @@ Single Flutter project (existing app) — `lib/` for source, `test/` for tests. 
 - [X] T005 [US1] In `lib/screens/song_view_screen.dart`, extend the host-side scroll handling around the `SingleChildScrollView`/`NotificationListener` (currently only stops auto-scroll on `UserScrollNotification`) to also compute `scrollFraction = pixels / maxScrollExtent` (clamped to `[0.0, 1.0]`) and call `_broadcastNowPlaying()` with it, throttled to at most one call per ~100–150ms while the user is actively dragging and `!widget.liveFollowing` (per `research.md`'s throttle decision).
 - [X] T006 [US1] In `lib/screens/song_view_screen.dart`, set the `SingleChildScrollView`'s `physics` to `const NeverScrollableScrollPhysics()` when `widget.liveFollowing` is true, so a follower's own drag gestures never move their view (FR-003).
 - [X] T007 [US1] In `lib/screens/song_view_screen.dart`'s `_onLiveFollowUpdate`, read `message.scrollFraction`, compute the target offset against the follower's own `_scrollController.position.maxScrollExtent`, and `jumpTo` it whenever `_scrollController.hasClients` (depends on T004 for the field to exist on the message; sequenced after T005/T006 since all three edit the same file).
-- [ ] T008 [US1] Manual verification: run Quickstart Scenarios 1, 2, and 4 from `specs/003-live-scroll-sync/quickstart.md` on two physical devices (real-time sync, follower lock, cross-device font/screen-size correspondence) (depends on T005, T006, T007).
+- [X] T008 [US1] Manual verification: run Quickstart Scenarios 1, 2, and 4 from `specs/003-live-scroll-sync/quickstart.md` on two physical devices (real-time sync, follower lock, cross-device font/screen-size correspondence) (depends on T005, T006, T007).
 
 **Checkpoint**: User Story 1 is fully functional and independently testable (assumes host and follower are already connected before the host starts scrolling).
 
@@ -75,7 +75,7 @@ Single Flutter project (existing app) — `lib/` for source, `test/` for tests. 
 - [X] T009 [P] [US2] In `lib/services/live_session_service.dart`, add an in-memory `LiveSessionMessage? _lastMessage` to `LiveSessionHost`, set it in `broadcast()`, and in `onConnectionResult` — when `status == Status.CONNECTED` — send `_lastMessage` (if any) directly to that specific `endpointId` in addition to the existing all-endpoints broadcasts elsewhere (depends on T003; different file from T005–T007 so can proceed in parallel with Phase 3).
 - [X] T010 [US2] In `lib/screens/song_view_screen.dart`, add an `initialScrollFraction` field to `SongViewScreen`'s constructor (alongside the existing `initialAutoScrollActive`/`initialLiveScrollSpeed`) and apply it to `_scrollController` once `hasClients` is true post-first-frame (depends on T003; sequenced after T005–T007 since it edits the same file).
 - [X] T011 [US2] In `lib/app.dart`'s `_onLiveSessionChange`, pass `initialScrollFraction: message.scrollFraction` into the `SongViewScreen(...)` route construction, alongside the existing `initialAutoScrollActive`/`initialLiveScrollSpeed` arguments (depends on T010).
-- [ ] T012 [US2] Manual verification: run Quickstart Scenario 3 from `specs/003-live-scroll-sync/quickstart.md` on two physical devices (first-time late join, then forced disconnect/reconnect) (depends on T009, T011).
+- [X] T012 [US2] Manual verification: run Quickstart Scenario 3 from `specs/003-live-scroll-sync/quickstart.md` on two physical devices (first-time late join, then forced disconnect/reconnect) (depends on T009, T011).
 
 **Checkpoint**: User Stories 1 and 2 both work independently — a follower is caught up whether they were already connected or just joined/reconnected.
 
@@ -86,7 +86,7 @@ Single Flutter project (existing app) — `lib/` for source, `test/` for tests. 
 **Purpose**: Confirm the feature doesn't regress existing behavior or violate project quality gates
 
 - [X] T013 [P] Run `flutter analyze` from the repo root and confirm no new warnings (constitution's Technology Constraints gate).
-- [ ] T014 Run Quickstart Scenario 5 from `specs/003-live-scroll-sync/quickstart.md` ("Pause following" suppresses scroll sync) to confirm the existing pause behavior isn't regressed — per `research.md`'s finding, this needs no new code, only verification.
+- [X] T014 Run Quickstart Scenario 5 from `specs/003-live-scroll-sync/quickstart.md` ("Pause following" suppresses scroll sync) to confirm the existing pause behavior isn't regressed — per `research.md`'s finding, this needs no new code, only verification.
 
 ---
 

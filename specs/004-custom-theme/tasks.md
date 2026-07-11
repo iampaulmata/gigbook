@@ -53,7 +53,7 @@ description: "Task list template for feature implementation"
 ### Implementation for User Story 1
 
 - [ ] T006 [P] [US1] Create the live preview widget in `lib/widgets/theme_preview.dart` — renders sample title, lyrics, a chord, a section header, and a comment/annotation using a supplied `CustomTheme`'s colors
-- [ ] T007 [P] [US1] Add an `AppTheme.custom(CustomTheme)` `ThemeData` factory in `lib/theme/app_theme.dart` (research.md §1), reusing the app's existing Material 3 `ColorScheme` construction pattern
+- [X] T007 [P] [US1] Add an `AppTheme.custom(CustomTheme)` `ThemeData` factory in `lib/theme/app_theme.dart` (research.md §1), reusing the app's existing Material 3 `ColorScheme` construction pattern
 - [ ] T008 [US1] Wire `useCustomTheme` into `lib/app.dart`'s `MaterialApp`: when true, set both `theme` and `darkTheme` to `AppTheme.custom(...)` for the active theme and force `themeMode: ThemeMode.light` (research.md §1) (depends on T005, T007)
 - [ ] T009 [US1] Create the Custom Theme screen scaffold in `lib/screens/custom_theme_screen.dart` — five `flex_color_picker` controls (background, text, chord, section header, comment) bound to local editable `CustomTheme` state, feeding `ThemePreview` for live updates (depends on T001, T002, T006)
 - [ ] T010 [US1] Implement the save flow in `lib/screens/custom_theme_screen.dart`: name input, contrast validation via `lib/services/contrast.dart` against all four text-bearing pairs, blocking save and indicating the failing pair(s) when below threshold (FR-018), otherwise persisting via `SettingsProvider.saveCustomTheme` (depends on T004, T005, T009)

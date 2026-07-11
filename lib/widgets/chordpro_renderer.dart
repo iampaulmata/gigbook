@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/chordpro_parser.dart';
+import '../theme/app_theme.dart';
 
 class ChordProRenderer extends StatelessWidget {
   final String content;
@@ -90,7 +91,7 @@ class ChordProRenderer extends StatelessWidget {
             fontSize: fontSize * 0.72,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.4,
-            color: theme.colorScheme.primary,
+            color: _chordProColors(theme).sectionHeader,
           ),
         ),
       );
@@ -132,7 +133,7 @@ class ChordProRenderer extends StatelessWidget {
     final theme = Theme.of(context);
     final baseStyle = TextStyle(
       fontSize: fontSize * 0.9,
-      color: theme.colorScheme.onSurfaceVariant,
+      color: _chordProColors(theme).comment,
     );
 
     switch (block.style) {
@@ -258,7 +259,7 @@ class _ChordLyricChunk extends StatelessWidget {
     final chordStyle = TextStyle(
       fontSize: chordSize,
       fontWeight: FontWeight.bold,
-      color: theme.colorScheme.primary,
+      color: _chordProColors(theme).chord,
       height: 1.2,
       fontFamily: 'monospace',
     );
@@ -293,6 +294,17 @@ class _ChordLyricChunk extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Falls back to standard ColorScheme roles if a [ThemeData] somehow lacks
+/// the [ChordProColors] extension (e.g. a bare ThemeData in a test).
+ChordProColors _chordProColors(ThemeData theme) {
+  return theme.extension<ChordProColors>() ??
+      ChordProColors(
+        chord: theme.colorScheme.primary,
+        sectionHeader: theme.colorScheme.primary,
+        comment: theme.colorScheme.onSurfaceVariant,
+      );
 }
 
 class _MetaChip extends StatelessWidget {

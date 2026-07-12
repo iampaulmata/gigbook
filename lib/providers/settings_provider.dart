@@ -119,11 +119,31 @@ class SettingsProvider extends ChangeNotifier {
     await prefs.setBool(_keyUseCustomTheme, true);
   }
 
+  /// Records [name] as the most recently selected custom theme (FR-010)
+  /// without necessarily making Custom the live app theme — used when the
+  /// user recalls a saved theme in the Custom Theme screen's editor, so the
+  /// *next* time they pick "Custom" in the main theme picker it applies
+  /// that recalled theme rather than a stale, earlier selection (bug: the
+  /// main picker's "Custom" option got permanently stuck on whichever
+  /// theme was applied first).
+  Future<void> setMostRecentCustomThemeName(String name) async {
+    _activeCustomThemeName = name;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyActiveCustomThemeName, name);
+  }
+
   Future<void> setThemeMode(ThemeMode mode) async {
     _themeMode = mode;
+    // A custom theme may currently be active — picking System/Light/Dark
+    // MUST actually switch away from it, not just change the mode that
+    // will apply once Custom is turned off some other way (bug: switching
+    // back to a default theme silently did nothing).
+    _useCustomTheme = false;
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyTheme, mode.index);
+    await prefs.setBool(_keyUseCustomTheme, false);
   }
 
   Future<void> setFontSize(double size) async {

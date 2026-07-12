@@ -228,13 +228,16 @@ class _CustomThemeScreenState extends State<CustomThemeScreen> {
   }
 
   /// Recalls a saved theme's colors into the editor and preview (FR-006,
-  /// FR-007).
+  /// FR-007), and records it as the most recently selected custom theme
+  /// (FR-010) so the main theme picker's "Custom" option applies *this*
+  /// theme next, instead of staying stuck on an earlier selection.
   void _recall(CustomTheme theme) {
     setState(() {
       _editing = theme;
       _loadedName = theme.name;
       _nameController.text = theme.name;
     });
+    context.read<SettingsProvider>().setMostRecentCustomThemeName(theme.name);
   }
 
   /// Deletes the currently-loaded saved theme after confirmation (FR-015) —

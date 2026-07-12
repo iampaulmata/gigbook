@@ -19,6 +19,10 @@ dark, large-text display — no network connection required.
   band members.
 - **Stage-ready display** — adjustable font size, chords on/off toggle, auto-scroll with
   tempo-synced speed, and a high-contrast dark theme designed for low-light stages.
+- **Custom themes** — design your own color scheme (background, text, chords, section headers,
+  comments) with a live preview, with saves blocked if a color pair falls below readable
+  contrast. Save multiple named themes, switch between them from Settings, and share/import
+  themes as JSON files with other GigBook users.
 - **Google Drive sync** — link a Drive folder to pull in charts and setlists, push local edits
   back, and get flagged on conflicting remote changes instead of silently overwriting them.
 - **Live session** — host or join a nearby live session (via Nearby Connections) so a whole band
@@ -50,10 +54,11 @@ grammar (annotation styles, inline spans, live metadata, custom directives, and 
 
 ## Project structure
 
-- `lib/models/` — plain Dart data models (Song, Setlist, SetlistEntry)
+- `lib/models/` — plain Dart data models (Song, Setlist, SetlistEntry, CustomTheme)
 - `lib/db/` — sqflite persistence
-- `lib/services/` — ChordPro parsing, import, Drive sync, live session, setlist sharing
+- `lib/services/` — ChordPro parsing, import, Drive sync, live session, setlist/theme sharing
 - `lib/providers/` — app state (library, setlists, settings, sync, live session)
+- `lib/theme/` — built-in Light/Dark themes and the custom-theme `ThemeData` factory
 - `lib/widgets/` / `lib/screens/` — UI
 - `specs/` — spec-driven feature specs, plans, and tasks (see `.specify/memory/constitution.md`
   for the project's governing principles)

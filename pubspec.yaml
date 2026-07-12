@@ -44,6 +44,7 @@ dependencies:
   saf_util: ^2.2.0
   saf_stream: ^2.0.0
   nearby_connections: ^4.3.0
+  flex_color_picker: ^3.7.2
 
 dev_dependencies:
   flutter_test:

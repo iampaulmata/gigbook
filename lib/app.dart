@@ -55,15 +55,23 @@ class GigBookApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<SettingsProvider>(
-      builder: (context, settings, _) => MaterialApp(
-        title: 'GigBook',
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: settings.themeMode,
-        home: const _HomeShell(),
-        debugShowCheckedModeBanner: false,
-        navigatorObservers: [_liveFollowRouteObserver],
-      ),
+      builder: (context, settings, _) {
+        final activeCustom = settings.activeCustomTheme;
+        final customThemeData =
+            activeCustom != null ? AppTheme.custom(activeCustom) : null;
+        return MaterialApp(
+          title: 'GigBook',
+          theme: customThemeData ?? AppTheme.light,
+          darkTheme: customThemeData ?? AppTheme.dark,
+          // A custom theme is one flat look (spec Assumptions), not a
+          // light/dark pair — force ThemeMode.light so the OS brightness
+          // setting can't flip between two identical ThemeData instances.
+          themeMode: customThemeData != null ? ThemeMode.light : settings.themeMode,
+          home: const _HomeShell(),
+          debugShowCheckedModeBanner: false,
+          navigatorObservers: [_liveFollowRouteObserver],
+        );
+      },
     );
   }
 }

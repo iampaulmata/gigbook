@@ -67,7 +67,7 @@ description: "Task list template for feature implementation"
 
 ## Phase 3: Polish & Cross-Cutting Concerns
 
-- [ ] T009 [P] Run `flutter analyze` and resolve any new warnings across all files touched by this feature (constitution quality gate)
+- [X] T009 [P] Run `flutter analyze` and resolve any new warnings across all files touched by this feature (constitution quality gate)
 - [ ] T010 Run the `quickstart.md` validation scenarios 1–7 plus the regression check, on-device (Android primary target; iPad secondary target if available)
 
 ---

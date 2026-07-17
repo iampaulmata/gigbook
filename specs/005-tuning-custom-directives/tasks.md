@@ -53,7 +53,7 @@ description: "Task list template for feature implementation"
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (Constitution Principle IV)**
 
-- [ ] T005 [US2] Write failing parser tests in `test/services/chordpro_parser_test.dart`: `{preset:VALUE}` sets `ParsedSong.preset`; `{p:VALUE}` (alias) sets it too; first declaration wins across a mix of `{preset:}` and `{p:}` redeclarations; and a custom `{x_foo:VALUE}` directive (unrelated to preset) remains a no-op, confirming `preset` is not part of the `x_*` custom-directive mechanism (FR-006) (depends on Phase 1 completing — same test file as T001)
+- [X] T005 [US2] Write failing parser tests in `test/services/chordpro_parser_test.dart`: `{preset:VALUE}` sets `ParsedSong.preset`; `{p:VALUE}` (alias) sets it too; first declaration wins across a mix of `{preset:}` and `{p:}` redeclarations; and a custom `{x_foo:VALUE}` directive (unrelated to preset) remains a no-op, confirming `preset` is not part of the `x_*` custom-directive mechanism (FR-006) (depends on Phase 1 completing — same test file as T001)
 
 ### Implementation for User Story 2
 

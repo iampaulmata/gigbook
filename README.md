@@ -43,6 +43,8 @@ grammar (annotation styles, inline spans, live metadata, custom directives, and 
 | `{key: ...}` | | Key |
 | `{tempo: ...}` | `{bpm: ...}` | Tempo (BPM) |
 | `{capo: ...}` | | Capo position |
+| `{tuning: ...}` | `{tu: ...}` | Tuning — shown below the artist name |
+| `{preset: ...}` | `{p: ...}` | Effects/pedal preset — shown in the song's metadata row |
 
 **Sections**
 

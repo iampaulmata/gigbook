@@ -16,6 +16,8 @@ silent no-op (Constitution II).
 | `{capo:VALUE}` | — | `ParsedSong.capo` (parsed as int) | FR-005 |
 | `{tempo:VALUE}` | — | `ParsedSong.tempo` (parsed as int) | FR-006 |
 | `{time:VALUE}` | — | `ParsedSong.timeSignature` | FR-007 |
+| `{tuning:VALUE}` | `{tu:VALUE}` | `ParsedSong.tuning` | spec 005 FR-001 |
+| `{preset:VALUE}` | `{p:VALUE}` | `ParsedSong.preset` | spec 005 FR-004 |
 
 ## Section directives (start/end pairs; unmatched end-of-file closes implicitly)
 

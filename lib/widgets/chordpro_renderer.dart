@@ -54,9 +54,15 @@ class ChordProRenderer extends StatelessWidget {
               ),
             ),
           ),
+        if (parsed.tuning != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: _MetaChip(label: 'Tuning: ${parsed.tuning}'),
+          ),
         if (parsed.key != null ||
             parsed.capo != null ||
-            parsed.timeSignature != null)
+            parsed.timeSignature != null ||
+            parsed.preset != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Wrap(
@@ -67,6 +73,8 @@ class ChordProRenderer extends StatelessWidget {
                 if (parsed.capo != null) _MetaChip(label: 'Capo ${parsed.capo}'),
                 if (parsed.timeSignature != null)
                   _MetaChip(label: 'Time: ${parsed.timeSignature}'),
+                if (parsed.preset != null)
+                  _MetaChip(label: 'Preset: ${parsed.preset}'),
               ],
             ),
           )

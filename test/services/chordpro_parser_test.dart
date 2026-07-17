@@ -361,6 +361,83 @@ void main() {
       });
     });
 
+    // ─── Tuning directive (spec 005, FR-001–FR-003, FR-007–FR-009) ──────────
+    group('Tuning directive', () {
+      test('{tuning:VALUE} sets ParsedSong.tuning', () {
+        expect(ChordProParser.parse('{tuning: Drop D}').tuning, 'Drop D');
+      });
+
+      test('{tu:VALUE} short alias sets tuning too', () {
+        expect(ChordProParser.parse('{tu: Open G}').tuning, 'Open G');
+      });
+
+      test('first declaration wins across a mix of {tuning:} and {tu:}', () {
+        final parsed =
+            ChordProParser.parse('{tuning: Drop D}\n{tu: Standard}');
+        expect(parsed.tuning, 'Drop D');
+
+        final reversed =
+            ChordProParser.parse('{tu: Open G}\n{tuning: DADGAD}');
+        expect(reversed.tuning, 'Open G');
+      });
+
+      test('a song with no tuning directive has a null tuning', () {
+        expect(ChordProParser.parse('{title: X}').tuning, isNull);
+      });
+
+      test('{t:} still sets title, unaffected by the new tu alias', () {
+        // Regression guard: `tu` was chosen specifically because `t` is
+        // already title's alias (spec Clarifications) — this must never
+        // become ambiguous.
+        final parsed = ChordProParser.parse('{t: My Title}');
+        expect(parsed.title, 'My Title');
+        expect(parsed.tuning, isNull);
+      });
+    });
+
+    // ─── Preset directive (spec 005, FR-004–FR-006, FR-008, FR-010) ─────────
+    group('Preset directive', () {
+      test('{preset:VALUE} sets ParsedSong.preset', () {
+        expect(ChordProParser.parse('{preset: Lead Boost}').preset,
+            'Lead Boost');
+      });
+
+      test('{p:VALUE} short alias sets preset too', () {
+        expect(ChordProParser.parse('{p: Preset 3}').preset, 'Preset 3');
+      });
+
+      test('first declaration wins across a mix of {preset:} and {p:}', () {
+        final parsed =
+            ChordProParser.parse('{preset: Lead Boost}\n{p: Clean}');
+        expect(parsed.preset, 'Lead Boost');
+
+        final reversed =
+            ChordProParser.parse('{p: Clean}\n{preset: Lead Boost}');
+        expect(reversed.preset, 'Clean');
+      });
+
+      test('a song with no preset directive has a null preset', () {
+        expect(ChordProParser.parse('{title: X}').preset, isNull);
+      });
+
+      test(
+          'an unrelated custom {x_foo:} directive remains a no-op — preset '
+          'is not part of the x_* mechanism', () {
+        final parsed = ChordProParser.parse('{title: X}\n{x_foo: bar}');
+        expect(parsed.preset, isNull);
+        final allText = parsed.blocks
+            .map((b) => switch (b) {
+                  AnnotationBlock(:final text) => text,
+                  LyricBlock(:final pairs) =>
+                    pairs.map((p) => p.lyricText).join(),
+                  _ => '',
+                })
+            .join('\n');
+        expect(allText, isNot(contains('x_foo')));
+        expect(allText, isNot(contains('bar')));
+      });
+    });
+
     // ─── Polish: whole-file regression (FR-001–FR-025) ───────────────────────
     test(
         'a file combining every directive from this feature imports without '

@@ -65,6 +65,8 @@ class ParsedSong {
   final int? capo;
   final int? tempo;
   final String? timeSignature;
+  final String? tuning;
+  final String? preset;
   final List<ParsedBlock> blocks;
 
   const ParsedSong({
@@ -75,6 +77,8 @@ class ParsedSong {
     this.capo,
     this.tempo,
     this.timeSignature,
+    this.tuning,
+    this.preset,
     required this.blocks,
   });
 }
@@ -118,6 +122,11 @@ class ChordProParser {
     int? capo;
     int? tempo;
     String? timeSignature;
+    // tuning/preset are display-only (spec 005 research.md §5) — no `live*`
+    // counterpart, unlike the fields above; they're never resolved via
+    // `%{...}` live metadata references.
+    String? tuning;
+    String? preset;
     final blocks = <ParsedBlock>[];
 
     // Most-recently-declared value — what `%{...}` references resolve
@@ -186,6 +195,14 @@ class ChordProParser {
           case 'time':
             timeSignature ??= value.isEmpty ? null : value;
             liveTimeSignature = value.isEmpty ? null : value;
+          // GigBook-added metadata directive (spec 005), not part of core
+          // ChordPro — same first-class treatment as capo/tempo/time above.
+          case 'tuning':
+          case 'tu':
+            tuning ??= value.isEmpty ? null : value;
+          case 'preset':
+          case 'p':
+            preset ??= value.isEmpty ? null : value;
           case 'color':
           case 'colour':
           case 'textcolor':
@@ -322,6 +339,8 @@ class ChordProParser {
       capo: capo,
       tempo: tempo,
       timeSignature: timeSignature,
+      tuning: tuning,
+      preset: preset,
       blocks: blocks,
     );
   }

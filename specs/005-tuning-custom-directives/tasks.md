@@ -31,7 +31,7 @@ description: "Task list template for feature implementation"
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation (Constitution Principle IV)**
 
-- [ ] T001 [US1] Write failing parser tests in `test/services/chordpro_parser_test.dart`: `{tuning:VALUE}` sets `ParsedSong.tuning`; `{tu:VALUE}` (alias) sets it too; first declaration wins across a mix of `{tuning:}` and `{tu:}` redeclarations (FR-008); and — critically — `{t: ...}` still sets `ParsedSong.title`, unaffected by the new `tu` alias (regression guard for the alias-collision decision in spec Clarifications)
+- [X] T001 [US1] Write failing parser tests in `test/services/chordpro_parser_test.dart`: `{tuning:VALUE}` sets `ParsedSong.tuning`; `{tu:VALUE}` (alias) sets it too; first declaration wins across a mix of `{tuning:}` and `{tu:}` redeclarations (FR-008); and — critically — `{t: ...}` still sets `ParsedSong.title`, unaffected by the new `tu` alias (regression guard for the alias-collision decision in spec Clarifications)
 
 ### Implementation for User Story 1
 

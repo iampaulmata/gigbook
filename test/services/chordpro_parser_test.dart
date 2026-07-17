@@ -361,6 +361,40 @@ void main() {
       });
     });
 
+    // ─── Tuning directive (spec 005, FR-001–FR-003, FR-007–FR-009) ──────────
+    group('Tuning directive', () {
+      test('{tuning:VALUE} sets ParsedSong.tuning', () {
+        expect(ChordProParser.parse('{tuning: Drop D}').tuning, 'Drop D');
+      });
+
+      test('{tu:VALUE} short alias sets tuning too', () {
+        expect(ChordProParser.parse('{tu: Open G}').tuning, 'Open G');
+      });
+
+      test('first declaration wins across a mix of {tuning:} and {tu:}', () {
+        final parsed =
+            ChordProParser.parse('{tuning: Drop D}\n{tu: Standard}');
+        expect(parsed.tuning, 'Drop D');
+
+        final reversed =
+            ChordProParser.parse('{tu: Open G}\n{tuning: DADGAD}');
+        expect(reversed.tuning, 'Open G');
+      });
+
+      test('a song with no tuning directive has a null tuning', () {
+        expect(ChordProParser.parse('{title: X}').tuning, isNull);
+      });
+
+      test('{t:} still sets title, unaffected by the new tu alias', () {
+        // Regression guard: `tu` was chosen specifically because `t` is
+        // already title's alias (spec Clarifications) — this must never
+        // become ambiguous.
+        final parsed = ChordProParser.parse('{t: My Title}');
+        expect(parsed.title, 'My Title');
+        expect(parsed.tuning, isNull);
+      });
+    });
+
     // ─── Polish: whole-file regression (FR-001–FR-025) ───────────────────────
     test(
         'a file combining every directive from this feature imports without '

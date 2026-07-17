@@ -27,9 +27,11 @@ FR-006 (this feature) simply confirms no regression to that existing rule.
 
 ## Display contract (not part of the grammar table, but the reason these two fields exist)
 
+> **Revised 2026-07-17** (see spec Clarifications): tuning's metadata-row duplicate was removed after on-device review — it now displays in exactly one place.
+
 | Field | Displayed where | Condition |
 |---|---|---|
-| `ParsedSong.tuning` | (a) a labeled tag directly below the artist line, AND (b) the song's metadata chip row (with key/capo/time signature) | Only when non-null (FR-002, FR-003, FR-009) |
+| `ParsedSong.tuning` | A labeled tag directly below the artist line only — NOT in the metadata chip row | Only when non-null (FR-002, FR-003, FR-009) |
 | `ParsedSong.preset` | The song's metadata chip row only (no below-artist duplicate) | Only when non-null (FR-005, FR-010) |
 
-The metadata chip row's visibility condition expands from `key != null || capo != null || timeSignature != null` to also include `tuning != null || preset != null` (FR-007) — a song with only a tuning or only a preset must still show the row.
+The metadata chip row's visibility condition expands from `key != null || capo != null || timeSignature != null` to also include `preset != null` (FR-007) — a song with only a preset must still show the row. Tuning does NOT affect this condition, since it never appears in the row.

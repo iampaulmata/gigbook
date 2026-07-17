@@ -6,7 +6,7 @@ Manual validation proving the feature works end-to-end. See `spec.md` for the ac
 
 - App built and running on a device/emulator (`flutter run`), or via the project's `run`/`verify` skill.
 
-## Scenario 1 — Tuning displays in both locations (US1)
+## Scenario 1 — Tuning displays below the artist name only (US1)
 
 1. Create or edit a `.cho`/`.crd`/`.pro`/`.txt` file containing:
    ```
@@ -18,17 +18,17 @@ Manual validation proving the feature works end-to-end. See `spec.md` for the ac
    ```
 2. Import it into the library and open it.
 3. **Expect**: a "Tuning: Drop D" tag appears directly below "Test Artist".
-4. **Expect**: "Tuning: Drop D" also appears in the metadata chip row, alongside "Key: D".
+4. **Expect**: "Tuning: Drop D" does NOT also appear in the metadata chip row — that row shows only "Key: D" (revised per Session 2026-07-17 Clarifications; tuning is no longer duplicated there).
 
-## Scenario 2 — Tuning-only song still shows the metadata row (FR-007)
+## Scenario 2 — Tuning-only song shows no metadata row (FR-007)
 
-1. Import a file with `{tuning: Open G}` but no `{key:}`, `{capo:}`, or `{time:}`.
-2. **Expect**: the metadata row still appears, showing only "Tuning: Open G".
+1. Import a file with `{tuning: Open G}` but no `{key:}`, `{capo:}`, `{time:}`, or `{preset:}`.
+2. **Expect**: the metadata row does not appear at all — only the below-artist "Tuning: Open G" tag is shown.
 
 ## Scenario 3 — No tuning means no tag anywhere (FR-009)
 
 1. Import a file with no `{tuning:}` directive.
-2. **Expect**: no tuning tag below the artist line, and no "Tuning:" entry in the metadata row (if the row appears at all, it's only for key/capo/time/preset).
+2. **Expect**: no tuning tag below the artist line, and no "Tuning:" entry anywhere (the metadata row, if it appears at all, is only for key/capo/time/preset).
 
 ## Scenario 4 — Preset directive displays (US2)
 
@@ -49,7 +49,7 @@ Manual validation proving the feature works end-to-end. See `spec.md` for the ac
 ## Scenario 6 — Repeated declarations, first wins (FR-008)
 
 1. Import a file with two `{tuning:}` lines declaring different values (e.g. `{tuning: Drop D}` then later `{tuning: Standard}`).
-2. **Expect**: the tag and chip both show "Drop D" (the first-declared value), not "Standard".
+2. **Expect**: the below-artist tag shows "Drop D" (the first-declared value), not "Standard".
 
 ## Scenario 7 — Short aliases work, and don't collide with existing ones
 
@@ -63,8 +63,8 @@ Manual validation proving the feature works end-to-end. See `spec.md` for the ac
    ```
 2. Open it.
 3. **Expect**: the title is still "Alias Test" (the first `{title:}` declaration), NOT "Not The Title?" — confirming `{t:}` still means title, unaffected by this feature.
-4. **Expect**: "Tuning: Drop D" appears below the artist and in the chip row (from `{tu:}`).
-5. **Expect**: "Preset: Preset 3" appears in the chip row (from `{p:}`).
+4. **Expect**: "Tuning: Drop D" appears below the artist only (from `{tu:}`) — not in the metadata row.
+5. **Expect**: "Preset: Preset 3" appears in the metadata row (from `{p:}`).
 
 ## Regression check
 

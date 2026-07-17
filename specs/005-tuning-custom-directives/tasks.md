@@ -59,7 +59,7 @@ description: "Task list template for feature implementation"
 
 - [X] T006 [US2] Add `preset` (String?) to `ParsedSong` and implement its `case 'preset': case 'p':` in the directive `switch` in `lib/services/chordpro_parser.dart`, following the same first-write-wins pattern as `tuning`, to make T005 pass (depends on T005, T002 — same file)
 - [X] T007 [US2] In `lib/widgets/chordpro_renderer.dart`: add a `Preset: ${parsed.preset}` `_MetaChip` to the metadata row (no below-artist duplicate, unlike tuning) and further expand the row's visibility condition to include `parsed.preset != null` (depends on T006, T003 — same file)
-- [ ] T008 [P] [US2] Add the `preset` row (directive `{preset:VALUE}`, alias `{p:VALUE}`) to the "Metadata directives" table in `specs/001-chordpro-tag-support/contracts/chordpro-directive-grammar.md`, per `contracts/directive-additions.md` (research.md §4)
+- [X] T008 [P] [US2] Add the `preset` row (directive `{preset:VALUE}`, alias `{p:VALUE}`) to the "Metadata directives" table in `specs/001-chordpro-tag-support/contracts/chordpro-directive-grammar.md`, per `contracts/directive-additions.md` (research.md §4)
 
 **Checkpoint**: Both user stories are independently functional
 

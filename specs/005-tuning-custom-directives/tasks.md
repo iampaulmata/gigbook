@@ -35,7 +35,7 @@ description: "Task list template for feature implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] Add `tuning` (String?) to `ParsedSong` and implement its `case 'tuning': case 'tu':` in the directive `switch` in `lib/services/chordpro_parser.dart`, following the existing `key`/`timeSignature` first-write-wins pattern, to make T001 pass (depends on T001)
+- [X] T002 [US1] Add `tuning` (String?) to `ParsedSong` and implement its `case 'tuning': case 'tu':` in the directive `switch` in `lib/services/chordpro_parser.dart`, following the existing `key`/`timeSignature` first-write-wins pattern, to make T001 pass (depends on T001)
 - [ ] T003 [US1] In `lib/widgets/chordpro_renderer.dart`: add a labeled tuning tag directly below the artist `Text` widget, add a `Tuning: ${parsed.tuning}` `_MetaChip` to the metadata `Wrap` row, and expand the row's visibility condition to include `parsed.tuning != null` (depends on T002)
 - [ ] T004 [P] [US1] Add the `tuning` row (directive `{tuning:VALUE}`, alias `{tu:VALUE}`) to the "Metadata directives" table in `specs/001-chordpro-tag-support/contracts/chordpro-directive-grammar.md`, per `contracts/directive-additions.md` (research.md §4)
 

@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
-        android:label="gigbook"
+        android:label="GigBook"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

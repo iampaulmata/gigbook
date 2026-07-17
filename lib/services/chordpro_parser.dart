@@ -66,6 +66,7 @@ class ParsedSong {
   final int? tempo;
   final String? timeSignature;
   final String? tuning;
+  final String? preset;
   final List<ParsedBlock> blocks;
 
   const ParsedSong({
@@ -77,6 +78,7 @@ class ParsedSong {
     this.tempo,
     this.timeSignature,
     this.tuning,
+    this.preset,
     required this.blocks,
   });
 }
@@ -124,6 +126,7 @@ class ChordProParser {
     // counterpart, unlike the fields above; they're never resolved via
     // `%{...}` live metadata references.
     String? tuning;
+    String? preset;
     final blocks = <ParsedBlock>[];
 
     // Most-recently-declared value — what `%{...}` references resolve
@@ -197,6 +200,9 @@ class ChordProParser {
           case 'tuning':
           case 'tu':
             tuning ??= value.isEmpty ? null : value;
+          case 'preset':
+          case 'p':
+            preset ??= value.isEmpty ? null : value;
           case 'color':
           case 'colour':
           case 'textcolor':
@@ -334,6 +340,7 @@ class ChordProParser {
       tempo: tempo,
       timeSignature: timeSignature,
       tuning: tuning,
+      preset: preset,
       blocks: blocks,
     );
   }

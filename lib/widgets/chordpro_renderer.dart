@@ -62,7 +62,8 @@ class ChordProRenderer extends StatelessWidget {
         if (parsed.key != null ||
             parsed.capo != null ||
             parsed.timeSignature != null ||
-            parsed.tuning != null)
+            parsed.tuning != null ||
+            parsed.preset != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Wrap(
@@ -75,6 +76,8 @@ class ChordProRenderer extends StatelessWidget {
                   _MetaChip(label: 'Time: ${parsed.timeSignature}'),
                 if (parsed.tuning != null)
                   _MetaChip(label: 'Tuning: ${parsed.tuning}'),
+                if (parsed.preset != null)
+                  _MetaChip(label: 'Preset: ${parsed.preset}'),
               ],
             ),
           )
